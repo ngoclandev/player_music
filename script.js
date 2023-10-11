@@ -223,6 +223,7 @@ const app = {
         _this.repeatSong();
       } else {
         _this.nextOrRandomSong();
+        _this.render();
       }
     };
 
