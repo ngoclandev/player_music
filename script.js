@@ -12,7 +12,7 @@
 const $ = document.querySelector.bind(document);
 const $$ = document.querySelectorAll.bind(document);
 
-// const PLAYER = "PPT_PLAYLIST";
+const PLAYER_STORAGE_KEY = "LANDEV_PLAYLIST";
 
 const player = $(".player");
 const heading = $("header h2");
@@ -90,14 +90,16 @@ const app = {
       image: "./assets/img/img_10.jpg",
     },
   ],
+  config: JSON.parse(localStorage.getItem(PLAYER_STORAGE_KEY)) || {},
+  setConfig(key, value) {
+    this.config[key] = value;
+    localStorage.setItem(PLAYER_STORAGE_KEY, JSON.stringify(this.config));
+  },
   isPlaying: false,
   isRandom: false,
   isRepeat: false,
   currentIndex: 0,
-  // config: JSON.parse(PLAYER) || {},
-  setConfig(key, value) {
-    this.config[key] = value;
-  },
+
   defineProperties() {
     Object.defineProperty(this, "currentSong", {
       get: function () {
@@ -181,7 +183,9 @@ const app = {
     audio.ontimeupdate = function () {
       const progressPercent = (audio.currentTime / audio.duration) * 100;
 
-      progress.value = !isNaN(progressPercent) ? progressPercent : 0;
+      if (progressPercent) {
+        progress.value = progressPercent;
+      }
     };
 
     // seek song
@@ -210,13 +214,6 @@ const app = {
       _this.scrollSongIntoView();
     };
 
-    // random song
-    randomBtn.onclick = function () {
-      _this.isRandom = !_this.isRandom;
-
-      randomBtn.classList.toggle("active", _this.isRandom);
-    };
-
     // ended song
     audio.onended = function () {
       if (_this.isRepeat) {
@@ -227,11 +224,20 @@ const app = {
       }
     };
 
+    // random song
+    randomBtn.onclick = function () {
+      _this.isRandom = !_this.isRandom;
+
+      randomBtn.classList.toggle("active", _this.isRandom);
+      _this.setConfig("isRandom", _this.isRandom);
+    };
+
     // repeat song
     repeatBtn.onclick = function () {
       _this.isRepeat = !_this.isRepeat;
 
       repeatBtn.classList.toggle("active", _this.isRepeat);
+      _this.setConfig("isRepeat", _this.isRepeat);
     };
 
     // click playlist
@@ -308,14 +314,30 @@ const app = {
     cdThumb.style.backgroundImage = `url(${this.currentSong.image})`;
     audio.src = this.currentSong.path;
   },
+  loadConfig() {
+    this.isRandom = this.config.isRandom;
+    this.isRepeat = this.config.isRepeat;
+  },
 
   start() {
-    this.render();
+    // Tải cấu hình khi vào ứng dụng
+    this.loadConfig();
 
+    // Định nghĩa getters cho ứng dụng
     this.defineProperties();
 
+    // Render bài hát
+    this.render();
+
+    // Hàm xử lí sự kiện
     this.handleEvents();
+
+    // Tải bài hát theo current index tương ứng
     this.loadCurrentSong();
+
+    // Hiển thị trạng thái ban đầu của button repeat & random
+    randomBtn.classList.toggle("active", this.isRandom);
+    repeatBtn.classList.toggle("active", this.isRepeat);
   },
 };
 
